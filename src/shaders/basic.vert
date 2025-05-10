@@ -7,5 +7,10 @@ varying vec2 vUv;
 
 void main() {
   vUv = aTexCoord;
-  gl_Position = vec4(aPosition, 1.0);
+   // Transform from [0,1] to [-1,1] and move to top-left
+  vec3 position = aPosition;
+  position.x = 2.0 * position.x - 1.0; // Transform x from [0,1] to [-1,1]
+  position.y = 2.0 * position.y - 1.0; // Transform y from [0,1] to [-1,1]
+  
+  gl_Position = vec4(position, 1.0);
 }

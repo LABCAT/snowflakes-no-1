@@ -1,6 +1,6 @@
 import { Midi } from '@tonejs/midi';
 
-const audio = new URL("@audio/snowflakes-no-1.ogg", import.meta.url).href;
+const audio = new URL("@audio/snowflakes-no-1.mp3", import.meta.url).href;
 const midi = new URL("@audio/snowflakes-no-1.mid", import.meta.url).href;
 const vertShader = new URL("@shaders/basic.vert", import.meta.url).href;
 const fragShader1 = new URL("@shaders/snowflake.frag", import.meta.url).href;
@@ -109,8 +109,8 @@ const SnowflakesNo1 = (p) => {
         // Load and parse the MIDI file
         Midi.fromUrl(midi).then((result) => {
             console.log('MIDI loaded:', result);
-            const track2 = result.tracks[17].notes;
-            p.scheduleCueSet(track2, 'executeTrack1');
+            // const track2 = result.tracks[17].notes;
+            // p.scheduleCueSet(track2, 'executeTrack1');
             document.getElementById("loader").classList.add("loading--complete");
             document.getElementById('play-icon').classList.add('fade-in');
             p.audioLoaded = true;
