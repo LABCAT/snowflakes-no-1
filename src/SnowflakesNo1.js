@@ -55,19 +55,23 @@ const SnowflakesNo1 = (p) => {
     p.setup = () => {
         // Set up the canvas
         p.createCanvas(p.windowWidth, p.windowHeight);
-        p.background(0);
+        p.pixelDensity(1);
+        p.bgBuffer = p.createGraphics(p.width, p.height, p.WEBGL);
+        p.bgBuffer.shader(p.shaderBg);
+        p.shaderBg.setUniform('uResolution', [p.width, p.height]);
+        p.shaderBg.setUniform('uTime', p.millis() / 1000.0);
+        p.bgBuffer.rect(0, 0, p.width, p.height);
+        p.image(p.bgBuffer, 0, 0, p.width, p.height);
     };
 
     p.draw = () => {
         if (p.audioLoaded && p.song.isPlaying()) {
-            // p.shader(p.shaderBg);
-            // p.shaderBg.setUniform('uResolution', [p.width, p.height]);
-            // p.shaderBg.setUniform('uTime', p.millis() / 1000.0);
-            // p.rect(0, 0, p.width, p.height);
+            p.bgBuffer.shader(p.shaderBg);
+            p.shaderBg.setUniform('uResolution', [p.width, p.height]);
+            p.shaderBg.setUniform('uTime', p.millis() / 1000.0);
+            p.bgBuffer.rect(0, 0, p.width, p.height);
+            p.image(p.bgBuffer, 0, 0, p.width, p.height);
 
-            // p.resetMatrix();
-            // p.translate(-p.width / 2, -p.height / 2);
-            p.background(0);
             for (let i = p.snowflakes.length - 1; i >= 0; i--) {
                 p.snowflakes[i].update();
                 p.snowflakes[i].draw();

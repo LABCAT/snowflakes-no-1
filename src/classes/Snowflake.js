@@ -34,7 +34,9 @@ export default class Snowflake {
         tempStage.translate(tempStage.width / 2, tempStage.height / 2);
         tempStage.rotate(this.p.PI / 6);
         tempStage.noFill();
-        tempStage.strokeWeight(this.p.random(1, 3));
+        // tempStage.strokeWeight(this.p.random(1, 2));
+        tempStage.strokeWeight(3);
+        tempStage.stroke(0, 0, 100);
         let isFinish = false;
         while (!isFinish) {
            
@@ -46,7 +48,36 @@ export default class Snowflake {
             if (current.pos.x >= tempStage.width / 2) {
                 
                 for (let j = 0; j < 6; j++) {
-                    tempStage.stroke(this.p.random(0, 360), 60, this.p.random(60, 100), 0.6);
+                    
+                    tempStage.rotate(this.p.PI / 3);
+                    for (let i of flake) {
+                        i.show();
+                    }
+                    tempStage.push();
+                    tempStage.scale(1, -1);
+                    for (let i of flake) {
+                        
+                        i.show();
+                    }
+                    tempStage.pop();
+                }
+                isFinish = true;
+            }
+        }
+        tempStage.strokeWeight(1.5);
+        tempStage.stroke(this.p.random(0, 360), 60, this.p.random(60, 100), 0.8);
+        isFinish = false;
+        while (!isFinish) {
+           
+            current = new Particle(this.p, tempStage, flake, tempStage.width / 2, this.p.random(2));
+            while (!current.finished() && !current.intersects()) {
+                current.update();
+            }
+            flake.push(current);
+            if (current.pos.x >= tempStage.width / 2) {
+                
+                for (let j = 0; j < 6; j++) {
+                    
                     tempStage.rotate(this.p.PI / 3);
                     for (let i of flake) {
                         i.show();
