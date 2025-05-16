@@ -6,7 +6,13 @@ const midi = new URL("@audio/snowflakes-no-1.mid", import.meta.url).href;
 const vertShader = new URL("@shaders/basic.vert", import.meta.url).href;
 const fragShader = new URL("@shaders/gradient.frag", import.meta.url).href;
 
-
+/**
+ * Inspiration:
+ * https://cloudfour.com/thinks/coding-a-snowflake-generator/
+ * https://www.shadertoy.com/view/Xsd3zf
+ * https://openprocessing.org/sketch/790571
+ * https://openprocessing.org/sketch/1891515
+ */
 const SnowflakesNo1 = (p) => {
     p.song = null;
     p.audioLoaded = false;
