@@ -19,6 +19,8 @@ const SnowflakesNo1 = (p) => {
     p.songHasFinished = false;
     p.snowflakes = [];
     p.shaderBg = null;
+    p.PPQ = 3840 * 4;
+    p.bpm = 144;
 
     p.preload = async () => {
         p.shaderBg = p.loadShader(vertShader, fragShader);
@@ -85,36 +87,26 @@ const SnowflakesNo1 = (p) => {
         }
     };
 
-    p.executeTrack1 = ({ currentCue }) => {
+    p.executeTrack1 = (note) => {
+        const { currentCue, durationTicks } = note;
+        const duration = (durationTicks / p.PPQ) * (60 / p.bpm);
+        
         if (currentCue % 8 === 1) {
             p.snowflakes = [];
         }
 
-        const maxAttempts = 100;
-        let placed = false;
-        let attempts = 0;
-
-        while (!placed && attempts < maxAttempts) {
+        if (currentCue % 8 === 0) {
+            // reset animation start and duration
+            p.snowflakes.forEach(sf => {
+                sf.duration = duration * 1000;
+                sf.birthTime = p.song.currentTime() * 1000; 
+                sf.reversed = true;
+            });
+        } else {
             const size = p.random(50, 100);
             const x = p.random(size, p.width - size);
             const y = p.random(size, p.height - size);
-
-            let overlap = false;
-            for (let i = 0; i < p.snowflakes.length; i++) {
-                const other = p.snowflakes[i];
-                const d = p.dist(x, y, other.loc.x, other.loc.y);
-                if (d < size + other.size) {
-                    overlap = true;
-                    break;
-                }
-            }
-
-            if (!overlap) {
-                p.snowflakes.push(new Snowflake(p, x, y, size));
-                placed = true;
-            }
-
-            attempts++;
+            p.snowflakes.push(new Snowflake(p, x, y, duration));
         }
     };
 

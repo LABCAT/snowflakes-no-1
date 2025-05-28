@@ -1,7 +1,7 @@
 import Particle from './Particle.js';  
 
 export default class Snowflake {
-    constructor(p, x = p.random(0, p.width), y = p.random(0, p.height)) {
+    constructor(p, x = p.random(0, p.width), y = p.random(0, p.height), duration) {
         this.p = p;
 
         // Set base snowflake size as a percentage of screen width or height
@@ -9,7 +9,14 @@ export default class Snowflake {
         this.baseSize = screenMinDimension * 0.2;
         this.size = this.baseSize * p.random(0.5, 2);
 
-        this.flakeimg = this.setStg();
+        // Create the buffer in the constructor
+        this.buffer = this.p.createGraphics(100, 100);
+        this.buffer.colorMode(this.p.HSB);
+        this.buffer.translate(this.buffer.width / 2, this.buffer.height / 2);
+        this.buffer.rotate(this.p.PI / 6);
+        this.buffer.noFill();
+
+        this.generateParticles();
 
         // Ensure x, y are within the screen bounds
         this.loc = this.p.createVector(
@@ -22,95 +29,113 @@ export default class Snowflake {
         if (Math.random() < 0.5) { 
             this.rotspd *= -1; 
         }
-        this.holspd = this.p.random(-0.001, 0.001);
-        this.holnoise = this.p.random(0, 2000);
+        this.duration = duration * 1000;
+        this.birthTime = p.song.currentTime() * 1000;
+        this.reversed = false;
     }
 
-    setStg() {
-        let current;
-        const flake = [];
-        const tempStage = this.p.createGraphics(100, 100);
-        tempStage.colorMode(this.p.HSB);
-        tempStage.translate(tempStage.width / 2, tempStage.height / 2);
-        tempStage.rotate(this.p.PI / 6);
-        tempStage.noFill();
-        // tempStage.strokeWeight(this.p.random(1, 2));
-        tempStage.strokeWeight(3);
-        tempStage.stroke(0, 0, 100);
+     generateParticles() {
+        const flake1 = [];
+        const flake2 = [];
+
+        // Helper function to generate a batch
+        const generateBatch = (flakeArray, strokeWeight, strokeColor) => {
         let isFinish = false;
         while (!isFinish) {
-           
-            current = new Particle(this.p, tempStage, flake, tempStage.width / 2, this.p.random(2));
+            let current = new Particle(
+            this.p,
+            this.buffer,
+            flakeArray,
+            this.buffer.width / 2,
+            this.p.random(2),
+            strokeWeight,
+            strokeColor
+            );
             while (!current.finished() && !current.intersects()) {
-                current.update();
+            current.update();
             }
-            flake.push(current);
-            if (current.pos.x >= tempStage.width / 2) {
-                
-                for (let j = 0; j < 6; j++) {
-                    
-                    tempStage.rotate(this.p.PI / 3);
-                    for (let i of flake) {
-                        i.show();
-                    }
-                    tempStage.push();
-                    tempStage.scale(1, -1);
-                    for (let i of flake) {
-                        
-                        i.show();
-                    }
-                    tempStage.pop();
-                }
-                isFinish = true;
+            flakeArray.push(current);
+            if (current.pos.x >= this.buffer.width / 2) {
+            isFinish = true;
             }
         }
-        tempStage.strokeWeight(1.5);
-        tempStage.stroke(this.p.random(0, 360), 60, this.p.random(60, 100), 0.8);
-        isFinish = false;
-        while (!isFinish) {
-           
-            current = new Particle(this.p, tempStage, flake, tempStage.width / 2, this.p.random(2));
-            while (!current.finished() && !current.intersects()) {
-                current.update();
-            }
-            flake.push(current);
-            if (current.pos.x >= tempStage.width / 2) {
-                
-                for (let j = 0; j < 6; j++) {
-                    
-                    tempStage.rotate(this.p.PI / 3);
-                    for (let i of flake) {
-                        i.show();
-                    }
-                    tempStage.push();
-                    tempStage.scale(1, -1);
-                    for (let i of flake) {
-                        
-                        i.show();
-                    }
-                    tempStage.pop();
-                }
-                isFinish = true;
-            }
-        }
-        return tempStage;
+        };
+
+        generateBatch(flake1, 2, [0, 0, 100, 0.8]); // white particles
+        // colored particles
+        generateBatch(
+            flake2, 
+            1, 
+            [
+                this.p.random(0, 360),
+                100,
+                100,
+                1,
+            ]
+        );
+            
+        this.flake1 = flake1;
+        this.flake2 = flake2;
     }
+
+
 
     update() {
-        // Adjust snowflake size to be based on screen dimensions (e.g., width or height)
-        const snowflakeSize = this.size;
+        const currentTime = this.p.song.currentTime() * 1000;
+        const elapsed = currentTime - this.birthTime;
+        const rawProgress = elapsed / this.duration;
 
+        this.progress = this.p.constrain(
+            this.reversed ? 1 - rawProgress : rawProgress,
+            0,
+            1
+        );
 
-        // Apply noise for the holspd
-        this.holspd += (this.p.noise(this.holnoise) - 0.5) / 200;
-        this.holnoise += 0.002;
+        this.drawToBuffer(this.progress);
     }
 
+    drawToBuffer(progress) {
+        this.buffer.clear();
+        // Calculate how many particles to show based on progress (index limit)
+        const count1 = Math.floor(this.flake1.length * progress);
+        const count2 = Math.floor(this.flake2.length * progress);
+        for (let j = 0; j < 6; j++) {
+            this.buffer.rotate(this.p.PI / 3);
+
+            // Draw partial flake1
+            for (let i = 0; i < count1; i++) {
+                this.flake1[i].show();
+            }
+
+            this.buffer.push();
+            this.buffer.scale(1, -1);
+            for (let i = 0; i < count1; i++) {
+                this.flake1[i].show();
+            }
+            this.buffer.pop();
+        }
+
+        for (let j = 0; j < 6; j++) {
+            this.buffer.rotate(this.p.PI / 3);
+
+            // Draw partial flake2
+            for (let i = 0; i < count2; i++) {
+                this.flake2[i].show();
+            }
+
+            this.buffer.push();
+            this.buffer.scale(1, -1);
+            for (let i = 0; i < count2; i++) {
+                this.flake2[i].show();
+            }
+            this.buffer.pop();
+        }
+    }
     draw() {
         this.p.push();
         this.p.translate(this.loc.x, this.loc.y);
         this.p.rotate(this.p.frameCount / this.rotspd);
-        this.p.image(this.flakeimg, -this.size / 2, -this.size / 2, this.size, this.size); // Use dynamic size here
+        this.p.image(this.buffer, -this.size / 2, -this.size / 2, this.size, this.size); // Use dynamic size here
         this.p.pop();
     }
 }
