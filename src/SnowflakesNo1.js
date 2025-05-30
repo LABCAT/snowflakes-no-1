@@ -1,7 +1,7 @@
 import { Midi } from '@tonejs/midi';
 import Snowflake from './classes/Snowflake.js';
 
-const audio = new URL("@audio/snowflakes-no-1.mp3", import.meta.url).href;
+const audio = new URL("@audio/snowflakes-no-1.ogg", import.meta.url).href;
 const midi = new URL("@audio/snowflakes-no-1.mid", import.meta.url).href;
 const vertShader = new URL("@shaders/basic.vert", import.meta.url).href;
 const fragShader = new URL("@shaders/gradient.frag", import.meta.url).href;
@@ -265,9 +265,9 @@ const SnowflakesNo1 = (p) => {
                             }
                         });
                     }
+                    p.patternIndex = 0;
                 }
                 document.getElementById("play-icon").classList.remove("fade-in");
-                p.patternIndex = 0;
                 p.song.play();
                 if (typeof window.dataLayer !== typeof undefined && !p.hasStarted) {
                     window.dataLayer.push({
