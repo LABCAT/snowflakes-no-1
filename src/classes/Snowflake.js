@@ -7,7 +7,8 @@ export default class Snowflake {
         // Set base snowflake size as a percentage of screen width or height
         const screenMinDimension = Math.min(p.width, p.height); // Use the smallest dimension of the screen
         this.baseSize = screenMinDimension * 0.2;
-        this.size = this.baseSize * p.random(0.5, 2);
+        // this.size = this.baseSize * p.random(0.5, 2);
+        this.size = this.baseSize;
 
         // Create the buffer in the constructor
         this.buffer = this.p.createGraphics(100, 100);

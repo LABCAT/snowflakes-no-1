@@ -87,12 +87,26 @@ const SnowflakesNo1 = (p) => {
         }
     };
 
+    p.patterns = ['circle', 'grid', 'pentagon', 'heptagon', 'plus-sign', 'radial-spoke', 'wave'];
+
+    p.snowflakePositions = [];
+    
+    p.patternIndex = 0;
+
+    p.currentPattern = null;
+
     p.executeTrack1 = (note) => {
         const { currentCue, durationTicks } = note;
         const duration = (durationTicks / p.PPQ) * (60 / p.bpm);
         
         if (currentCue % 8 === 1) {
+            if (currentCue === 1) {
+                p.patterns = p.shuffle(['circle', 'grid', 'pentagon', 'heptagon', 'plus-sign', 'radial-spoke', 'wave']);
+            }
             p.snowflakes = [];
+            p.currentPattern = p.patterns[p.patternIndex];
+            p.generatePatternPositions()
+            p.patternIndex++;
         }
 
         if (currentCue % 8 === 0) {
@@ -100,14 +114,138 @@ const SnowflakesNo1 = (p) => {
             p.snowflakes.forEach(sf => {
                 sf.duration = duration * 1000;
                 sf.birthTime = p.song.currentTime() * 1000; 
-                sf.reversed = true;
+                sf.reversed = currentCue > 40 ? false : Math.random() < 0.5;
             });
         } else {
-            const size = p.random(50, 100);
-            const x = p.random(size, p.width - size);
-            const y = p.random(size, p.height - size);
+            const index = (currentCue % 8) - 1;
+            const [x, y] = p.snowflakePositions[index];
             p.snowflakes.push(new Snowflake(p, x, y, duration));
         }
+    };
+
+    p.generatePatternPositions = () => {
+        p.snowflakePositions = [];
+        const centerX = p.width / 2;
+        const centerY = p.height / 2;
+        const isPortrait = p.height > p.width;
+
+        switch (p.currentPattern) {
+            case 'wave': {
+                const amplitude = Math.min(p.width, p.height) * 0.2;
+                const spacing = isPortrait ? p.height / 8 : p.width / 8;
+
+                for (let i = 0; i < 7; i++) {
+                    const t = i / 6; // 0 to 1
+                    if (isPortrait) {
+                        const y = spacing * (i + 1);
+                        const x = centerX + Math.sin(t * p.TWO_PI) * amplitude;
+                        p.snowflakePositions.push([x, y]);
+                    } else {
+                        const x = spacing * (i + 1);
+                        const y = centerY + Math.sin(t * p.TWO_PI) * amplitude;
+                        p.snowflakePositions.push([x, y]);
+                    }
+                }
+                break;
+            }
+            case 'radial-spoke': {
+                const centerX = p.width / 2;
+                const centerY = p.height / 2 + p.height / 16;
+                const radiusInner = Math.min(p.width, p.height) * 0.25;
+                const radiusOuter = Math.min(p.width, p.height) * 0.42;
+                const offset = -p.HALF_PI;
+
+                p.snowflakePositions.push([centerX, centerY]);
+
+                for (let i = 0; i < 3; i++) {
+                    const angle = p.TWO_PI * (i / 3) + offset;
+
+                    const xInner = centerX + radiusInner * Math.cos(angle);
+                    const yInner = centerY + radiusInner * Math.sin(angle);
+                    p.snowflakePositions.push([xInner, yInner]);
+
+                    const xOuter = centerX + radiusOuter * Math.cos(angle);
+                    const yOuter = centerY + radiusOuter * Math.sin(angle);
+                    p.snowflakePositions.push([xOuter, yOuter]);
+                }
+                break;
+            }
+           case 'plus-sign': {
+                const centerX = p.width / 2;
+                const centerY = p.height / 2;
+                const spacing = Math.min(p.width, p.height) * 0.3;
+                p.snowflakePositions.push([centerX, centerY]);
+
+                const xOffsets = isPortrait ? [0, 0, 0, 0, -spacing, spacing] : [-spacing * 2, -spacing, spacing, spacing * 2, 0, 0];
+                const yOffsets = isPortrait ? [-spacing * 2, -spacing, spacing, spacing * 2, 0, 0] : [0, 0, 0, 0, -spacing, spacing];
+
+                for (let i = 0; i < xOffsets.length; i++) {
+                    p.snowflakePositions.push([centerX + xOffsets[i], centerY + yOffsets[i]]);
+                }
+                break;
+            }
+            case 'grid': {
+                const colCount = isPortrait ? [2, 3, 2] : [2, 3, 2];
+                const colSpacing = p.width / 4;
+                const rowSpacing = p.height / 4;
+                const positions = [];
+
+                colCount.forEach((cols, row) => {
+                    for (let i = 0; i < cols; i++) {
+                    const x = isPortrait
+                        ? colSpacing * (1 + i + (3 - cols) / 2)
+                        : colSpacing * (row + 1);
+                    const y = isPortrait
+                        ? rowSpacing * (row + 1)
+                        : rowSpacing * (1 + i + (3 - cols) / 2);
+                    positions.push([x, y]);
+                    }
+                });
+
+                p.snowflakePositions = positions;
+                break;
+            }
+            case 'pentagon': {
+                const radius = Math.min(p.width, p.height) * 0.3;
+                const angleOffset = -p.HALF_PI;
+                for (let i = 0; i < 5; i++) {
+                    const angle = p.TWO_PI * (i / 5) + angleOffset;
+                    const x = centerX + radius * Math.cos(angle);
+                    const y = centerY + radius * Math.sin(angle);
+                    p.snowflakePositions.push([x, y]);
+                }
+                const extraPoints = [
+                    isPortrait ? [centerX, p.height * 0.1] : [p.width * 0.1, centerY],
+                    isPortrait ? [centerX, p.height * 0.9] : [p.width * 0.9, centerY]
+                ];
+                p.snowflakePositions.push(...extraPoints);
+                break;
+            }
+            case 'heptagon': {
+                const radius = Math.min(p.width, p.height) * 0.3;
+                const angleOffset = -p.HALF_PI;
+                for (let i = 0; i < 7; i++) {
+                    const angle = p.TWO_PI * (i / 7) + angleOffset;
+                    const x = centerX + radius * Math.cos(angle);
+                    const y = centerY + radius * Math.sin(angle);
+                    p.snowflakePositions.push([x, y]);
+                }
+                break;
+            }
+            case 'circle':
+            default: {
+                p.snowflakePositions.push([centerX, centerY]);
+                const radius = Math.min(p.width, p.height) * 0.25;
+                for (let i = 0; i < 6; i++) {
+                    const angle = p.TWO_PI * (i / 6);
+                    const x = centerX + radius * Math.cos(angle);
+                    const y = centerY + radius * Math.sin(angle);
+                    p.snowflakePositions.push([x, y]);
+                }
+                break;
+            }
+        }
+        p.snowflakePositions = p.shuffle(p.snowflakePositions);
     };
 
 
@@ -129,6 +267,7 @@ const SnowflakesNo1 = (p) => {
                     }
                 }
                 document.getElementById("play-icon").classList.remove("fade-in");
+                p.patternIndex = 0;
                 p.song.play();
                 if (typeof window.dataLayer !== typeof undefined && !p.hasStarted) {
                     window.dataLayer.push({
